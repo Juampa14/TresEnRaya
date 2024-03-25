@@ -1,68 +1,132 @@
-import java.util.Scanner;
-public class TicTacToe {
-    public static void main(String[] args) {
-        Tablero t = new Tablero();
-        Jugador a;
-        Jugador b;
-        Jugador turno;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
 
-        Scanner sc = new Scanner(System.in);
-        System.out.print("Ingrese su nombre: ");
-        String nombre = sc.nextLine();
+public class TicTacToe extends JFrame {
+    private Tablero tablero;
+    private JButton[] botones;
+    private JLabel mensajeLabel;
+    private Jugador jugador1;
+    private Jugador jugador2;
+    private Jugador turno;
+    private Cronometro cronometro;
+    private JLabel cronometroLabel;
 
-        a = new JugadorPersona(nombre, 'X');
-        
-        Scanner sca = new Scanner(System.in);
-        System.out.print("Ingrese su nombre: ");
-        String nom = sca.nextLine();
-        b = new JugadorPC(nom, 'O');
+    public TicTacToe() {
+        super("Tres en Raya");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(300, 400);
+        setLayout(new BorderLayout());
 
-        turno = a;
+        // Solicitar nombres de los jugadores
+        String nombreJugador1 = JOptionPane.showInputDialog(this, "Nombre del Jugador 1:");
+        String nombreJugador2 = JOptionPane.showInputDialog(this, "Nombre del Jugador 2:");
 
-        boolean seguir = t.hayJugadas();
-        while (seguir) {
-            limpiarConsola();
-            System.out.println("Jugador 1 " + a.nombre + " ficha: " + a.ficha);
-            System.out.println("Jugador 2 " + b.nombre + " ficha: " + b.ficha);
-            System.out.println("======================");
-            t.dibujarTablero();
+        // Inicializar el tablero y los jugadores
+        tablero = new Tablero();
+        jugador1 = new JugadorPersona(nombreJugador1, 'X');
+        jugador2 = new JugadorPersona(nombreJugador2, 'O');
+        turno = jugador1;
 
-            System.out.println("Turno del Jugador " + turno.nombre);
-            int jugada = turno.jugar();
-
-            if (t.marcarJugada(jugada, turno)) {
-                if (t.esGanador(turno)) {
-                    limpiarConsola();
-                    t.dibujarTablero();
-                    System.out.println("\n-------------------------------");
-                    System.out.println("¡GANASTE!!! FELICIDADES " + turno.nombre + "!");
-                    System.out.println("-------------------------------");
-                    seguir = false;
-                } else {
-                    turno = (turno == a) ? b : a;
-                    seguir = t.hayJugadas();
+        // Crear botones para representar el tablero
+        JPanel panelTablero = new JPanel();
+        panelTablero.setLayout(new GridLayout(3, 3));
+        botones = new JButton[9];
+        for (int i = 0; i < 9; i++) {
+            botones[i] = new JButton();
+            botones[i].setFont(new Font("Arial", Font.PLAIN, 40));
+            final int index = i;
+            botones[i].addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    hacerJugada(index);
                 }
-            } else {
-                System.out.println("Posición ocupada. Por favor, elija otra.");
-            }
-
-            if (!seguir) {
-                System.out.println("¿Desea jugar nuevamente? (s/n)");
-                String r = sc.next();
-                if (r.equalsIgnoreCase("s")) {
-                    seguir = true;
-                    t = new Tablero();
-                    Jugador tmp = a;
-                    a = b;
-                    b = tmp;
-                    turno = a;
-                }
-            }
+            });
+            panelTablero.add(botones[i]);
         }
-        sc.close();
+
+        // Etiqueta para mensajes
+        mensajeLabel = new JLabel("Turno de " + turno.nombre);
+
+        // Temporizador
+        cronometroLabel = new JLabel("Tiempo restante: ");
+        cronometro = new Cronometro();
+        cronometro.iniciar(); // Iniciar cronometro al inicio del juego
+
+        // Agregar componentes al marco
+        add(panelTablero, BorderLayout.CENTER);
+        JPanel panelInferior = new JPanel(new BorderLayout());
+        panelInferior.add(mensajeLabel, BorderLayout.NORTH);
+        panelInferior.add(cronometroLabel, BorderLayout.CENTER);
+        panelInferior.add(cronometro, BorderLayout.SOUTH);
+        add(panelInferior, BorderLayout.SOUTH);
     }
-    public static void limpiarConsola() {
-        System.out.print("\033[H\033[2J");
-        System.out.flush();
+
+    private void hacerJugada(int index) {
+        cronometro.detener(); // Detener cronometro al hacer una jugada
+        if (tablero.marcarJugada(index, turno)) {
+            botones[index].setText(String.valueOf(turno.ficha));
+            if (tablero.esGanador(turno)) {
+                mostrarMensaje("¡GANASTE! FELICIDADES " + turno.nombre + "!");
+                 try {
+                        FileWriter escritura = new FileWriter("HistorialDeJuego.txt",true);
+                        escritura.write("\nLa partida fue entre "+jugador1.nombre+" VS "+jugador2.nombre+" y el ganador fue "+ turno.nombre);
+                        escritura.close();
+                    } catch(IOException excepcion) {
+                        excepcion.printStackTrace(System.out);
+                    }
+                reiniciarJuego();
+            } else {
+                if (!tablero.hayJugadas()) {
+                    mostrarMensaje("¡Empate!");
+                    try {
+                        FileWriter escritura = new FileWriter("HistorialDeJuego.txt",true);
+                        escritura.write("\nLa partida fue entre "+jugador1.nombre+" VS "+jugador2.nombre+" y hubo empate");
+                        escritura.close();
+                    } catch(IOException excepcion) {
+                        excepcion.printStackTrace(System.out);
+                    }
+                    reiniciarJuego();
+                } else {
+                    cambiarTurno();
+                }
+            }
+        } else {
+            mostrarMensaje("Posición ocupada. Por favor, elija otra.");
+        }
+    }
+
+    private void reiniciarJuego() {
+        int opcion = JOptionPane.showConfirmDialog(this, "¿Desea jugar nuevamente?", "Reiniciar juego", JOptionPane.YES_NO_OPTION);
+        if (opcion == JOptionPane.YES_OPTION) {
+            tablero = new Tablero();
+            for (JButton boton : botones) {
+                boton.setText("");
+            }
+            turno = jugador1;
+            mensajeLabel.setText("Turno de " + turno.nombre);
+            cronometro.iniciar(); // Iniciar temporizador para el nuevo turno
+        }else{
+            System.exit(0);
+        }
+    }
+
+    public void cambiarTurno() {
+        cronometro.detener(); // Detener temporizador al cambiar de turno
+        turno = (turno == jugador1) ? jugador2 : jugador1;
+        mensajeLabel.setText("Turno de " + turno.nombre);
+        cronometro.reiniciar(); // Reiniciar temporizador para el nuevo turno
+    }
+
+    private void mostrarMensaje(String mensaje) {
+        JOptionPane.showMessageDialog(this, mensaje);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new TicTacToe().setVisible(true);
+            }
+        });
     }
 }
