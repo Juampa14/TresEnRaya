@@ -1,0 +1,18 @@
+
+
+Version:	3.50
+CmdLine:	C:\Users\juanp\Documents\NetBeansProjects\TresEnRaya\TresEnRaya.exe --l4j-debug
+JNI:		No
+WOW64:		Yes
+Working dir:	C:\Users\juanp\Documents\NetBeansProjects\TresEnRaya\.
+Requires JDK:	No
+Requires 64-Bit: No
+Java min ver:	1.017.000
+Java max ver:	
+JRE paths:	C:\Program Files\Java\jdk-17
+Check launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe (OK)
+Version string: 1.017.000_008 / 64-Bit (OK)
+Launcher:	C:\Program Files\Java\jdk-17\bin\javaw.exe
+Launcher args:	-jar "C:\Users\juanp\Documents\NetBeansProjects\TresEnRaya\TresEnRaya.exe"
+Args length:	74/32768 chars
+Exit code:	0
